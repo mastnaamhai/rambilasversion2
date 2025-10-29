@@ -203,7 +203,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                 .invoice-table th:nth-child(4), .invoice-table td:nth-child(4) { width: 6%; } /* Reporting Date */
                 .invoice-table th:nth-child(5), .invoice-table td:nth-child(5) { width: 6%; } /* Delivery Date */
                 .invoice-table th:nth-child(6), .invoice-table td:nth-child(6) { width: 7%; } /* Invoice Number */
-                .invoice-table th:nth-child(7), .invoice-table td:nth-child(7) { width: 12%; } /* Consignee Name */
+                .invoice-table th:nth-child(7), .invoice-table td:nth-child(7) { width: 12%; } /* Consigner Name */
                 .invoice-table th:nth-child(8), .invoice-table td:nth-child(8) { width: 5%; } /* Packages */
                 .invoice-table th:nth-child(9), .invoice-table td:nth-child(9) { width: 6%; } /* Weight */
                 .invoice-table th:nth-child(10), .invoice-table td:nth-child(10) { width: 8%; } /* Material */
@@ -383,11 +383,12 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                 <div className="invoice-header border-t border-b border-gray-400 py-4 mb-4">
                     <div className="invoice-details">
                         <div>
-                            <p><span className="font-bold w-20 inline-block">Customer :</span> {client?.name}</p>
-                            <p><span className="font-bold w-20 inline-block">Add :</span></p>
-                            <p className="pl-20 whitespace-pre-line text-xs">{client?.address}</p>
-                            <p><span className="font-bold w-20 inline-block">State :</span> {client?.state}</p>
-                            <p><span className="font-bold w-20 inline-block">GSTIN/- :</span> {client?.gstin}</p>
+                            <p><span className="font-bold w-24 inline-block">Customer :</span> {client?.name}</p>
+                            <p className="flex items-start gap-2">
+                                <span className="font-bold w-24 inline-block flex-shrink-0">Address :</span>
+                                <span className="whitespace-pre-line text-xs flex-1">{client?.address}</span>
+                            </p>
+                            <p><span className="font-bold w-24 inline-block">GSTIN/- :</span> {client?.gstin}</p>
                         </div>
                         <div className="text-right">
                             <p><span className="font-bold">Invoice No :</span> {invoice.invoiceNumber}</p>
@@ -414,7 +415,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                             <th className="p-2 border border-gray-300 font-semibold text-center">Reporting Date</th>
                             <th className="p-2 border border-gray-300 font-semibold text-center">Delivery Date</th>
                             <th className="p-2 border border-gray-300 font-semibold text-center">Invoice Number</th>
-                            <th className="p-2 border border-gray-300 font-semibold text-center">Consignee Name</th>
+                            <th className="p-2 border border-gray-300 font-semibold text-center">Consigner Name</th>
                             <th className="p-2 border border-gray-300 text-right font-semibold">Packages</th>
                             <th className="p-2 border border-gray-300 text-right font-semibold">Weight (kg)</th>
                             <th className="p-2 border border-gray-300 text-center font-semibold">Material</th>
@@ -434,7 +435,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     </thead>
                     <tbody>
                         {(invoice.lorryReceipts || []).map(lr => {
-                            const consignee = lr.consignee;
+                            const consignor = lr.consignor;
                             const packs = (lr.packages || []).reduce((sum, p) => sum + (p.count || 0), 0);
                             const weight = (lr.packages || []).reduce((sum, p) => sum + (p.chargedWeight || 0), 0);
                             const material = (lr.packages || []).map(p => p.description).join(', ') || '-';
@@ -470,8 +471,8 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                                     <td className="p-2 border border-gray-300 text-center text-xs">{lr.reportingDate ? formatDate(lr.reportingDate) : '-'}</td>
                                     <td className="p-2 border border-gray-300 text-center text-xs">{lr.deliveryDate ? formatDate(lr.deliveryDate) : '-'}</td>
                                     <td className="p-2 border border-gray-300 text-center text-xs" title={lr.invoiceNo || ''}>{lr.invoiceNo || '-'}</td>
-                                    <td className="p-2 border border-gray-300 text-left text-xs" title={consignee?.tradeName || consignee?.name || ''}>
-                                        {consignee?.tradeName || consignee?.name || '-'}
+                                    <td className="p-2 border border-gray-300 text-left text-xs" title={consignor?.tradeName || consignor?.name || ''}>
+                                        {consignor?.tradeName || consignor?.name || '-'}
                                     </td>
                                     <td className="p-2 border border-gray-300 text-right text-xs">{packs}</td>
                                     <td className="p-2 border border-gray-300 text-right text-xs">{weight.toLocaleString('en-IN')}</td>

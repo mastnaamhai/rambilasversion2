@@ -53,3 +53,11 @@ export const deleteTruckHiringNote = async (id: string): Promise<void> => {
         throw new Error('Failed to delete Truck Hiring Note');
     }
 };
+
+export const recalculateThnStatus = async (id: string): Promise<TruckHiringNote> => {
+    const response = await fetch(`${API_BASE_URL}/truckhiringnotes/${id}/recalculate`);
+    if (!response.ok) {
+        throw new Error('Failed to recalculate Truck Hiring Note status');
+    }
+    return response.json();
+};

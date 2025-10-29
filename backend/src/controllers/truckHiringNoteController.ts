@@ -5,17 +5,27 @@ import Payment from '../models/payment';
 import NumberingConfig from '../models/numbering';
 import { createTruckHiringNoteSchema, updateTruckHiringNoteSchema } from '../utils/validation';
 import { THNStatus, PaymentType, PaymentMode } from '../types';
+import { updateThnStatus } from './paymentController';
 
 export const getTruckHiringNotes = asyncHandler(async (req: Request, res: Response) => {
+  // Recalculate all THNs to ensure paid amounts are accurate (especially after fixing double-counting bug)
+  // This runs in parallel for better performance
   const notes = await TruckHiringNote.find().populate('payments').sort({ thnNumber: -1 });
-  console.log(`Returning ${notes.length} THNs with statuses:`, notes.map(n => ({ thnNumber: n.thnNumber, status: n.status, paidAmount: n.paidAmount, balanceAmount: n.balanceAmount })));
-  res.json(notes);
+  await Promise.all(notes.map(note => updateThnStatus(note._id.toString())));
+  // Fetch again with updated values
+  const updatedNotes = await TruckHiringNote.find().populate('payments').sort({ thnNumber: -1 });
+  console.log(`Returning ${updatedNotes.length} THNs with statuses:`, updatedNotes.map(n => ({ thnNumber: n.thnNumber, status: n.status, paidAmount: n.paidAmount, balanceAmount: n.balanceAmount })));
+  res.json(updatedNotes);
 });
 
 export const getTruckHiringNoteById = asyncHandler(async (req: Request, res: Response) => {
   const note = await TruckHiringNote.findById(req.params.id).populate('payments');
   if (note) {
-    res.json(note);
+    // Recalculate status to ensure data is up-to-date
+    await updateThnStatus(req.params.id);
+    // Fetch again with updated values
+    const updatedNote = await TruckHiringNote.findById(req.params.id).populate('payments');
+    res.json(updatedNote || note);
   } else {
     res.status(404);
     throw new Error('Truck Hiring Note not found');
@@ -254,7 +264,25 @@ export const updateTruckHiringNote = asyncHandler(async (req: Request, res: Resp
     res.status(404);
     throw new Error('Truck Hiring Note not found');
   }
-  res.json(updatedNote);
+
+  // Always recalculate status after update to ensure accuracy
+  await updateThnStatus(req.params.id);
+
+  // Fetch the updated note with recalculated values
+  const recalculatedNote = await TruckHiringNote.findById(req.params.id).populate('payments');
+  res.json(recalculatedNote || updatedNote);
+});
+
+export const recalculateThnStatus = asyncHandler(async (req: Request, res: Response) => {
+  const thnId = req.params.id;
+  await updateThnStatus(thnId);
+  const updatedNote = await TruckHiringNote.findById(thnId).populate('payments');
+  if (updatedNote) {
+    res.json(updatedNote);
+  } else {
+    res.status(404);
+    throw new Error('Truck Hiring Note not found');
+  }
 });
 
 export const deleteTruckHiringNote = asyncHandler(async (req: Request, res: Response) => {

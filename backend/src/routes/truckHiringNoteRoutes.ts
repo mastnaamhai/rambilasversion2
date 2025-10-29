@@ -4,13 +4,15 @@ import {
     getTruckHiringNoteById,
     createTruckHiringNote,
     updateTruckHiringNote,
-    deleteTruckHiringNote
+    deleteTruckHiringNote,
+    recalculateThnStatus
 } from '../controllers/truckHiringNoteController';
 // import { runAdvancePaymentMigration } from '../utils/migrateAdvancePayments';
 
 const router = express.Router();
 
 router.get('/', getTruckHiringNotes);
+router.get('/:id/recalculate', recalculateThnStatus);
 router.get('/:id', getTruckHiringNoteById);
 router.post('/', createTruckHiringNote);
 router.put('/:id', updateTruckHiringNote);

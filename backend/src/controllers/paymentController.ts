@@ -5,10 +5,10 @@ import Invoice from '../models/invoice';
 import TruckHiringNote from '../models/truckHiringNote';
 import { updateInvoiceStatus } from '../utils/invoiceUtils';
 import NumberingConfig from '../models/numbering';
-import { THNStatus } from '../types';
+import { THNStatus, PaymentType } from '../types';
 import mongoose from 'mongoose';
 // THN status update function
-const updateThnStatus = async (thnId: string) => {
+export const updateThnStatus = async (thnId: string) => {
   try {
     console.log(`Updating THN status for ID: ${thnId}`);
     const thn = await TruckHiringNote.findById(thnId);
@@ -24,11 +24,21 @@ const updateThnStatus = async (thnId: string) => {
     
     const paidAmount = totalPaid.length > 0 ? totalPaid[0].total : 0;
     const totalAmount = thn.freightRate + (thn.additionalCharges || 0);
-    // Include advance amount in total paid amount
-    const totalPaidAmount = paidAmount + (thn.advanceAmount || 0);
+    
+    // Check if advance payment record exists
+    // Advance payments are stored as Payment records, so they're already included in paidAmount
+    // Only add advanceAmount if no advance payment record exists (edge case for old data)
+    const advancePaymentExists = await Payment.findOne({
+      truckHiringNoteId: new mongoose.Types.ObjectId(thnId),
+      type: PaymentType.ADVANCE
+    });
+    
+    // If advance payment record exists, it's already included in paidAmount
+    // Otherwise, add the advance amount (for backward compatibility with old records)
+    const totalPaidAmount = advancePaymentExists ? paidAmount : (paidAmount + (thn.advanceAmount || 0));
     const balanceAmount = Math.max(0, totalAmount - totalPaidAmount); // Ensure balance is never negative
     
-    console.log(`Calculated - Paid: ${paidAmount}, Advance: ${thn.advanceAmount || 0}, Total Paid: ${totalPaidAmount}, Total: ${totalAmount}, Balance: ${balanceAmount}`);
+    console.log(`Calculated - Paid from records: ${paidAmount}, Advance from THN: ${thn.advanceAmount || 0}, Advance payment record exists: ${!!advancePaymentExists}, Total Paid: ${totalPaidAmount}, Total: ${totalAmount}, Balance: ${balanceAmount}`);
     
     let status = THNStatus.UNPAID;
     if (balanceAmount <= 0) {
