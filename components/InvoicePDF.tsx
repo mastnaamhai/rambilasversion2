@@ -3,12 +3,13 @@
 import React, { useState } from 'react';
 import type { Invoice, CompanyInfo, Customer } from '../types';
 import { GstType } from '../types';
-import { generateDocumentPdf, printDocument } from '../services/pdfService';
+import { generateDocumentPdf, printDocument, printToPdfFile } from '../services/pdfService';
 import { Button } from './ui/Button';
 import { Logo } from './ui/Logo';
 import { PrintStyles } from './ui/PrintStyles';
 import { PDFViewer, usePDFViewer } from './ui/PDFViewer';
 import { PDFActionBar } from './ui/PDFActionBar';
+import { PrintPreview } from './ui/PrintPreview';
 import { numberToWords, formatDate, getOriginLocationText } from '../services/utils';
 
 interface InvoicePDFProps {
@@ -52,13 +53,17 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
     const lrCount = (invoice.lorryReceipts || []).length;
     const getTableScale = () => {
         if (lrCount <= 5) return 1.0;
-        if (lrCount <= 10) return 0.9;
-        if (lrCount <= 15) return 0.8;
-        if (lrCount <= 20) return 0.75;
-        return 0.7; // For very long tables
+        if (lrCount <= 10) return 0.95;
+        if (lrCount <= 15) return 0.9;
+        if (lrCount <= 20) return 0.85;
+        return 0.85; // For very long tables - minimum scale to maintain readability
     };
     
     const tableScale = getTableScale();
+    
+    // Check if any LR has reporting/delivery dates for conditional column display
+    const hasReportingDate = (invoice.lorryReceipts || []).some(lr => lr.reportingDate);
+    const hasDeliveryDate = (invoice.lorryReceipts || []).some(lr => lr.deliveryDate);
 
     return (
         <div id="invoice-pdf" className="bg-white p-4 text-sm font-sans" style={{ width: '420mm', minHeight: '297mm', fontFamily: 'sans-serif', lineHeight: '1.3', margin: '0 auto' }}>
@@ -158,7 +163,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                 
                 .invoice-table {
                     page-break-inside: avoid;
-                    font-size: 10px;
+                    font-size: 12px;
                     width: 100%;
                     table-layout: fixed;
                     border-collapse: collapse;
@@ -166,25 +171,26 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                 
                 .invoice-table th,
                 .invoice-table td {
-                    padding: 6px 4px;
+                    padding: 8px 6px;
                     border: 1px solid #374151;
                     vertical-align: middle;
                     word-wrap: break-word;
                     overflow: hidden;
-                    white-space: nowrap;
-                    text-overflow: ellipsis;
                 }
                 
                 .invoice-table th {
                     background-color: #f3f4f6;
                     font-weight: 600;
                     text-align: center;
-                    font-size: 10px;
+                    font-size: 12px;
+                    white-space: normal;
                 }
                 
                 .invoice-table td {
                     text-align: center;
-                    font-size: 10px;
+                    font-size: 12px;
+                    white-space: normal;
+                    overflow-wrap: break-word;
                 }
                 
                 .invoice-table .text-left {
@@ -234,13 +240,13 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     transform: scale(${tableScale}) !important;
                     transform-origin: top left !important;
                     width: ${100 / tableScale}% !important;
-                    font-size: ${Math.max(6, 8 * tableScale)}px !important;
+                    font-size: ${Math.max(8, 12 * tableScale)}px !important;
                 }
                 
                 .charges-table th,
                 .charges-table td {
-                    padding: ${Math.max(1, 2 * tableScale)}px ${Math.max(2, 3 * tableScale)}px !important;
-                    font-size: ${Math.max(6, 8 * tableScale)}px !important;
+                    padding: ${Math.max(3, 8 * tableScale)}px ${Math.max(3, 6 * tableScale)}px !important;
+                    font-size: ${Math.max(8, 12 * tableScale)}px !important;
                 }
                 
                 .invoice-table .text-right {
@@ -287,7 +293,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     
                     /* Ensure tables fit properly in landscape with auto-scaling */
                     .invoice-table {
-                        font-size: ${Math.max(6, 8 * tableScale)}px !important;
+                        font-size: ${Math.max(8, 12 * tableScale)}px !important;
                         width: 100% !important;
                         table-layout: fixed !important;
                         page-break-inside: avoid !important;
@@ -296,11 +302,12 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     
                     .invoice-table th,
                     .invoice-table td {
-                        padding: ${Math.max(1, 2 * tableScale)}px ${Math.max(2, 3 * tableScale)}px !important;
-                        font-size: ${Math.max(6, 8 * tableScale)}px !important;
-                        line-height: 1.2 !important;
+                        padding: ${Math.max(3, 8 * tableScale)}px ${Math.max(3, 6 * tableScale)}px !important;
+                        font-size: ${Math.max(8, 12 * tableScale)}px !important;
+                        line-height: 1.4 !important;
                         word-wrap: break-word !important;
                         overflow-wrap: break-word !important;
+                        white-space: normal !important;
                     }
                     
                     /* Prevent table from breaking across pages */
@@ -315,16 +322,16 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     
                     /* Auto-scale table to fit page based on content */
                     .invoice-table {
-                        transform: scale(${Math.min(tableScale, 0.8)}) !important;
+                        transform: scale(${Math.min(tableScale, 0.9)}) !important;
                         transform-origin: top left !important;
-                        width: ${100 / Math.min(tableScale, 0.8)}% !important; /* Compensate for scale */
+                        width: ${100 / Math.min(tableScale, 0.9)}% !important; /* Compensate for scale */
                     }
                     
-                    /* More aggressive scaling for print if needed */
+                    /* Ensure minimum readable scale */
                     @media print {
                         .invoice-table {
-                            transform: scale(${Math.min(tableScale * 0.9, 0.75)}) !important;
-                            width: ${100 / Math.min(tableScale * 0.9, 0.75)}% !important;
+                            transform: scale(${Math.max(Math.min(tableScale, 0.9), 0.85)}) !important;
+                            width: ${100 / Math.max(Math.min(tableScale, 0.9), 0.85)}% !important;
                         }
                     }
                     
@@ -341,6 +348,13 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     .invoice-table td {
                         word-break: break-word !important;
                         hyphens: auto !important;
+                        white-space: normal !important;
+                        overflow-wrap: break-word !important;
+                    }
+                    
+                    .invoice-table th {
+                        white-space: normal !important;
+                        overflow-wrap: break-word !important;
                     }
                     
                     /* Ensure all table content stays on one page */
@@ -365,11 +379,11 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                             size="xl" 
                             showText={true} 
                             className="justify-center"
+                            textClassName="text-3xl font-bold"
                             companyLogo={companyInfo?.logo}
                             companyName={companyInfo?.name}
                         />
                     </div>
-                    <h1 className="text-4xl font-bold tracking-wider text-gray-800">{companyInfo?.name || 'Company Name'}</h1>
                     <p className="text-gray-600 text-sm">{companyInfo?.address || 'Company Address'}</p>
                     <p className="text-gray-600 text-sm font-semibold">PH: {companyInfo?.phone1 || 'N/A'} / {companyInfo?.phone2 || 'N/A'}</p>
                     <div className="flex justify-center space-x-4 text-gray-600 text-sm">
@@ -412,15 +426,23 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                             <th className="p-2 border border-gray-300 font-semibold text-center">LR Number</th>
                             <th className="p-2 border border-gray-300 font-semibold text-center">LR Date</th>
                             <th className="p-2 border border-gray-300 font-semibold text-center">Destination</th>
-                            <th className="p-2 border border-gray-300 font-semibold text-center">Reporting Date</th>
-                            <th className="p-2 border border-gray-300 font-semibold text-center">Delivery Date</th>
+                            {hasReportingDate && (
+                                <th className="p-2 border border-gray-300 font-semibold text-center">Reporting Date</th>
+                            )}
+                            {hasDeliveryDate && (
+                                <th className="p-2 border border-gray-300 font-semibold text-center">Delivery Date</th>
+                            )}
                             <th className="p-2 border border-gray-300 font-semibold text-center">Invoice Number</th>
                             <th className="p-2 border border-gray-300 font-semibold text-center">Consigner Name</th>
                             <th className="p-2 border border-gray-300 text-right font-semibold">Packages</th>
                             <th className="p-2 border border-gray-300 text-right font-semibold">Weight (kg)</th>
                             <th className="p-2 border border-gray-300 text-center font-semibold">Material</th>
-                            <th className="p-2 border border-gray-300 text-right font-semibold">Total Charges (₹)</th>
-                            <th className="p-2 border border-gray-300 text-right font-semibold">Taxable Amount (₹)</th>
+                            {!(invoice.isRcm === true) && (
+                                <th className="p-2 border border-gray-300 text-right font-semibold">Total Charges (₹)</th>
+                            )}
+                            {!(invoice.isRcm === true) && (
+                                <th className="p-2 border border-gray-300 text-right font-semibold">Taxable Amount (₹)</th>
+                            )}
                             {invoice.gstType === GstType.CGST_SGST && (invoice.sgstAmount || 0) > 0 && (
                                 <th className="p-2 border border-gray-300 text-right font-semibold gst-column">SGST (₹)</th>
                             )}
@@ -436,6 +458,19 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     <tbody>
                         {(invoice.lorryReceipts || []).map(lr => {
                             const consignor = lr.consignor;
+                            const consignee = lr.consignee;
+                            const customer = invoice.customer;
+                            
+                            // Determine which party name to show in "Consigner Name" column
+                            let displayParty = consignor; // Default fallback
+                            if (customer && consignor && customer._id === consignor._id) {
+                                // Customer is consignor, show consignee
+                                displayParty = consignee;
+                            } else if (customer && consignee && customer._id === consignee._id) {
+                                // Customer is consignee, show consigner
+                                displayParty = consignor;
+                            }
+                            
                             const packs = (lr.packages || []).reduce((sum, p) => sum + (p.count || 0), 0);
                             const weight = (lr.packages || []).reduce((sum, p) => sum + (p.chargedWeight || 0), 0);
                             const material = (lr.packages || []).map(p => p.description).join(', ') || '-';
@@ -468,19 +503,27 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                                     <td className="p-2 border border-gray-300 text-center text-xs" title={lr.lrNumber || ''}>{lr.lrNumber || ''}</td>
                                     <td className="p-2 border border-gray-300 text-center text-xs">{formatDate(lr.date)}</td>
                                     <td className="p-2 border border-gray-300 text-center text-xs" title={lr.to || ''}>{lr.to || ''}</td>
-                                    <td className="p-2 border border-gray-300 text-center text-xs">{lr.reportingDate ? formatDate(lr.reportingDate) : '-'}</td>
-                                    <td className="p-2 border border-gray-300 text-center text-xs">{lr.deliveryDate ? formatDate(lr.deliveryDate) : '-'}</td>
+                                    {hasReportingDate && (
+                                        <td className="p-2 border border-gray-300 text-center text-xs">{lr.reportingDate ? formatDate(lr.reportingDate) : '-'}</td>
+                                    )}
+                                    {hasDeliveryDate && (
+                                        <td className="p-2 border border-gray-300 text-center text-xs">{lr.deliveryDate ? formatDate(lr.deliveryDate) : '-'}</td>
+                                    )}
                                     <td className="p-2 border border-gray-300 text-center text-xs" title={lr.invoiceNo || ''}>{lr.invoiceNo || '-'}</td>
-                                    <td className="p-2 border border-gray-300 text-left text-xs" title={consignor?.tradeName || consignor?.name || ''}>
-                                        {consignor?.tradeName || consignor?.name || '-'}
+                                    <td className="p-2 border border-gray-300 text-left text-xs" title={displayParty?.tradeName || displayParty?.name || ''}>
+                                        {displayParty?.tradeName || displayParty?.name || '-'}
                                     </td>
                                     <td className="p-2 border border-gray-300 text-right text-xs">{packs}</td>
                                     <td className="p-2 border border-gray-300 text-right text-xs">{weight.toLocaleString('en-IN')}</td>
                                     <td className="p-2 border border-gray-300 text-center text-xs" title={material}>{material}</td>
-                                    <td className="p-2 border border-gray-300 text-right text-xs">
-                                        {totalCharges.toLocaleString('en-IN')}
-                                    </td>
-                                    <td className="p-2 border border-gray-300 text-right text-xs">{taxableAmount.toLocaleString('en-IN')}</td>
+                                    {!(invoice.isRcm === true) && (
+                                        <td className="p-2 border border-gray-300 text-right text-xs">
+                                            {totalCharges.toLocaleString('en-IN')}
+                                        </td>
+                                    )}
+                                    {!(invoice.isRcm === true) && (
+                                        <td className="p-2 border border-gray-300 text-right text-xs">{taxableAmount.toLocaleString('en-IN')}</td>
+                                    )}
                                     {invoice.gstType === GstType.CGST_SGST && (invoice.sgstAmount || 0) > 0 && (
                                         <td className="p-2 border border-gray-300 text-right text-xs gst-column">{lrSgstAmount.toLocaleString('en-IN')}</td>
                                     )}
@@ -498,16 +541,17 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     </table>
                     
                     {/* GST Type Information */}
-                    <div className="mt-2 text-xs text-gray-600">
-                        <p className="font-semibold">GST Information:</p>
-                        <p>
-                            {invoice.gstType === GstType.CGST_SGST 
-                                ? `CGST + SGST (${invoice.cgstRate || 0}% + ${invoice.sgstRate || 0}% = ${(invoice.cgstRate || 0) + (invoice.sgstRate || 0)}%) - For same state transactions`
-                                : `IGST (${invoice.igstRate || 0}%) - For inter-state transactions`
-                            }
-                        </p>
-                        {invoice.isRcm && <p className="text-red-600 font-semibold">Note: GST payable under Reverse Charge Mechanism (RCM)</p>}
-                    </div>
+                    {!(invoice.isRcm === true) && (
+                        <div className="mt-2 text-xs text-gray-600">
+                            <p className="font-semibold">GST Information:</p>
+                            <p>
+                                {invoice.gstType === GstType.CGST_SGST 
+                                    ? `CGST + SGST (${invoice.cgstRate || 0}% + ${invoice.sgstRate || 0}% = ${(invoice.cgstRate || 0) + (invoice.sgstRate || 0)}%) - For same state transactions`
+                                    : `IGST (${invoice.igstRate || 0}%) - For inter-state transactions`
+                                }
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Freight Charges Breakdown Table */}
@@ -585,10 +629,12 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                                 <span>₹{totalFreight.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
                         )}
-                        <div className="flex justify-between">
-                            <span>Taxable Amount:</span>
-                            <span>{(invoice.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        </div>
+                        {!invoice.isRcm && (
+                            <div className="flex justify-between">
+                                <span>Taxable Amount:</span>
+                                <span>{(invoice.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between font-bold border-t-2 border-b-2 border-black py-1 text-base">
                             <span>Grand Total:</span>
                             <span>{(invoice.grandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -622,20 +668,23 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                             </div>
                         </div>
                     </div>
-                    <div className="text-left text-sm">
-                        <p className="font-bold underline">Bank Details</p>
-                        {companyInfo?.currentBankAccount ? (
-                            <>
-                                <p>{companyInfo.currentBankAccount.bankName}</p>
-                               
-                                <p>Account No: {companyInfo.currentBankAccount.accountNumber}</p>
-                                <p>IFSC Code: {companyInfo.currentBankAccount.ifscCode}</p>
-                                <p>Branch: {companyInfo.currentBankAccount.branch}</p>
-                            </>
-                        ) : (
-                            <p className="text-gray-500">No bank account selected</p>
-                        )}
+                    <div className="flex-1 flex justify-center">
+                        <div className="text-center text-sm">
+                            <p className="font-bold underline">Bank Details</p>
+                            {companyInfo?.currentBankAccount ? (
+                                <>
+                                    <p>{companyInfo.currentBankAccount.bankName}</p>
+                                   
+                                    <p>Account No: {companyInfo.currentBankAccount.accountNumber}</p>
+                                    <p>IFSC Code: {companyInfo.currentBankAccount.ifscCode}</p>
+                                    <p>Branch: {companyInfo.currentBankAccount.branch}</p>
+                                </>
+                            ) : (
+                                <p className="text-gray-500">No bank account selected</p>
+                            )}
+                        </div>
                     </div>
+                    <div className="w-0 flex-1"></div>
                 </div>
             </div>
         </div>
@@ -646,7 +695,9 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
 export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, companyInfo, customers, onBack }) => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isPrinting, setIsPrinting] = useState(false);
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [showFreightBreakdown, setShowFreightBreakdown] = useState(false);
+    const [showPrintPreview, setShowPrintPreview] = useState(false);
     const { openViewer, PDFViewerComponent } = usePDFViewer();
 
     const handleGeneratePdf = async () => {
@@ -667,6 +718,12 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, companyInfo, cu
     };
 
     const handlePrint = async () => {
+        // Show preview first
+        setShowPrintPreview(true);
+    };
+
+    const handlePrintConfirmed = async () => {
+        setShowPrintPreview(false);
         setIsPrinting(true);
         try {
             await printDocument('invoice-pdf-container', {
@@ -682,6 +739,21 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, companyInfo, cu
             alert('Failed to print. Please try again.');
         } finally {
             setIsPrinting(false);
+        }
+    };
+
+    const handlePrintToPdf = async () => {
+        setIsGeneratingPdf(true);
+        try {
+            await printToPdfFile('invoice-pdf-container', {
+                orientation: 'landscape',
+                fileName: `Invoice-${invoice.invoiceNumber}.pdf`
+            });
+        } catch (error) {
+            console.error('PDF generation failed:', error);
+            alert('Failed to generate PDF. Please try again.');
+        } finally {
+            setIsGeneratingPdf(false);
         }
     };
 
@@ -713,17 +785,19 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, companyInfo, cu
                                         widows: 3;
                                     }
                                     .invoice-table {
-                                        font-size: ${Math.max(6, 8 * tableScale)}px !important;
+                                        font-size: ${Math.max(8, 12 * tableScale)}px !important;
                                         width: 100% !important;
                                         table-layout: fixed !important;
-                                        transform: scale(${Math.min(tableScale, 0.8)}) !important;
+                                        transform: scale(${Math.max(Math.min(tableScale, 0.9), 0.85)}) !important;
                                         transform-origin: top left !important;
                                     }
                                     .invoice-table th,
                                     .invoice-table td {
-                                        padding: ${Math.max(1, 2 * tableScale)}px ${Math.max(2, 3 * tableScale)}px !important;
-                                        font-size: ${Math.max(6, 8 * tableScale)}px !important;
+                                        padding: ${Math.max(3, 8 * tableScale)}px ${Math.max(3, 6 * tableScale)}px !important;
+                                        font-size: ${Math.max(8, 12 * tableScale)}px !important;
                                         word-wrap: break-word !important;
+                                        white-space: normal !important;
+                                        overflow-wrap: break-word !important;
                                     }
                                 </style>
                             </head>
@@ -768,6 +842,15 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, companyInfo, cu
                         isGenerating={isGenerating}
                         isPrinting={isPrinting}
                     />
+                    <div className="flex items-center space-x-2">
+                        <Button
+                            variant="outline"
+                            onClick={handlePrintToPdf}
+                            disabled={isGeneratingPdf}
+                        >
+                            {isGeneratingPdf ? 'Generating PDF...' : 'Print to PDF'}
+                        </Button>
+                    </div>
                 </div>
             </div>
             <div id="invoice-pdf-container" className="print-container flex justify-center bg-gray-300 p-4 overflow-x-auto" style={{ minHeight: '100vh' }}>
@@ -776,6 +859,16 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, companyInfo, cu
                 </div>
             </div>
             <PDFViewerComponent />
+            {showPrintPreview && (
+                <PrintPreview
+                    elementId="invoice-pdf-container"
+                    isOpen={showPrintPreview}
+                    onClose={() => setShowPrintPreview(false)}
+                    onPrint={handlePrintConfirmed}
+                    orientation="landscape"
+                    title={`Print Preview - Invoice ${invoice.invoiceNumber}`}
+                />
+            )}
         </div>
     );
 }

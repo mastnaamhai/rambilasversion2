@@ -3,7 +3,8 @@ import { Button } from './Button';
 import { Card } from './Card';
 import { LorryReceiptView } from '../LorryReceiptPDF';
 import { LorryReceipt, CompanyInfo } from '../../types';
-import { generatePdf, generateMultiPagePdf, printDocument } from '../../services/pdfService';
+import { generatePdf, generateMultiPagePdf, printDocument, printToPdfFile } from '../../services/pdfService';
+import { PrintPreview } from './PrintPreview';
 
 interface CopyType {
   id: string;
@@ -17,6 +18,8 @@ interface CopyState {
   showFreightCharges: boolean;
   isGenerating: boolean;
   isPrinting: boolean;
+  isGeneratingPdf: boolean;
+  showPreview: boolean;
 }
 
 interface LorryReceiptCopyPreviewProps {
@@ -69,7 +72,9 @@ export const LorryReceiptCopyPreview: React.FC<LorryReceiptCopyPreviewProps> = (
       initialState[copy.id] = {
         showFreightCharges: false,
         isGenerating: false,
-        isPrinting: false
+        isPrinting: false,
+        isGeneratingPdf: false,
+        showPreview: false
       };
     });
     return initialState;
@@ -159,11 +164,27 @@ export const LorryReceiptCopyPreview: React.FC<LorryReceiptCopyPreviewProps> = (
     }
   };
 
+  const handleShowPreview = (copyId: string) => {
+    updateCopyState(copyId, { showPreview: true });
+  };
+
+  const handleClosePreview = (copyId: string) => {
+    updateCopyState(copyId, { showPreview: false });
+  };
+
   const handlePrint = async (copyId: string) => {
     const copyType = copyTypes.find(c => c.id === copyId);
     if (!copyType) return;
 
-    updateCopyState(copyId, { isPrinting: true });
+    // Show preview first
+    updateCopyState(copyId, { showPreview: true });
+  };
+
+  const handlePrintConfirmed = async (copyId: string) => {
+    const copyType = copyTypes.find(c => c.id === copyId);
+    if (!copyType) return;
+
+    updateCopyState(copyId, { isPrinting: true, showPreview: false });
     
     try {
       // Create a temporary container for single copy
@@ -211,6 +232,60 @@ export const LorryReceiptCopyPreview: React.FC<LorryReceiptCopyPreviewProps> = (
       alert('Failed to print. Please try again.');
     } finally {
       updateCopyState(copyId, { isPrinting: false });
+    }
+  };
+
+  const handlePrintToPdf = async (copyId: string) => {
+    const copyType = copyTypes.find(c => c.id === copyId);
+    if (!copyType) return;
+
+    updateCopyState(copyId, { isGeneratingPdf: true });
+    
+    try {
+      // Create a temporary container for single copy
+      const tempContainer = document.createElement('div');
+      tempContainer.id = `temp-pdf-container-${copyId}`;
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '-9999px';
+      document.body.appendChild(tempContainer);
+
+      // Create a temporary React element
+      const tempDiv = document.createElement('div');
+      tempContainer.appendChild(tempDiv);
+
+      // Use React to render the component
+      const { createRoot } = await import('react-dom/client');
+      const root = createRoot(tempDiv);
+      
+      root.render(
+        <div className="print-container flex flex-col items-center bg-gray-200 p-8">
+          <LorryReceiptView
+            lorryReceipt={lorryReceipt}
+            companyInfo={companyInfo}
+            copyType={copyType.watermark}
+            hideCharges={!copyStates[copyId].showFreightCharges}
+          />
+        </div>
+      );
+
+      // Wait for render to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Generate PDF
+      await printToPdfFile(`temp-pdf-container-${copyId}`, {
+        orientation: 'portrait',
+        fileName: `LR-${lorryReceipt.id}-${copyType.label.replace(/\s+/g, '-')}.pdf`
+      });
+
+      // Cleanup
+      root.unmount();
+      document.body.removeChild(tempContainer);
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      updateCopyState(copyId, { isGeneratingPdf: false });
     }
   };
 
@@ -520,6 +595,22 @@ export const LorryReceiptCopyPreview: React.FC<LorryReceiptCopyPreviewProps> = (
                     'Print Copy'
                   )}
                 </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => handlePrintToPdf(activeTab)}
+                  disabled={copyStates[activeTab].isGeneratingPdf}
+                  className="w-full"
+                >
+                  {copyStates[activeTab].isGeneratingPdf ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                      Generating...
+                    </div>
+                  ) : (
+                    'Print to PDF'
+                  )}
+                </Button>
               </div>
 
               {/* Copy Status */}
@@ -533,6 +624,28 @@ export const LorryReceiptCopyPreview: React.FC<LorryReceiptCopyPreviewProps> = (
           </div>
         </div>
       </div>
+
+      {/* Print Preview Modal */}
+      {copyStates[activeTab].showPreview && (
+        <PrintPreview
+          elementId=""
+          isOpen={copyStates[activeTab].showPreview}
+          onClose={() => handleClosePreview(activeTab)}
+          onPrint={() => handlePrintConfirmed(activeTab)}
+          orientation="portrait"
+          title={`Print Preview - ${getCopyTypeLabel(activeTab)}`}
+          previewContent={() => (
+            <div className="print-container flex flex-col items-center bg-gray-200 p-8">
+              <LorryReceiptView
+                lorryReceipt={lorryReceipt}
+                companyInfo={companyInfo}
+                copyType={getCopyTypeWatermark(activeTab)}
+                hideCharges={!copyStates[activeTab].showFreightCharges}
+              />
+            </div>
+          )}
+        />
+      )}
     </div>
   );
 };

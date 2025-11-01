@@ -102,6 +102,23 @@ export const PrintStyles: React.FC<PrintStylesProps> = ({
           widows: 3;
         }
         
+        /* Browser-specific page size fixes */
+        @supports (-webkit-appearance: none) {
+          /* Chrome, Safari, Edge */
+          @page {
+            size: ${orientation === 'landscape' ? 'A4 landscape' : 'A4'};
+            -webkit-print-color-adjust: exact;
+          }
+        }
+        
+        @supports (print-color-adjust: exact) {
+          /* Firefox, modern browsers */
+          @page {
+            size: ${orientation === 'landscape' ? 'A4 landscape' : 'A4'};
+            print-color-adjust: exact;
+          }
+        }
+        
         body {
           margin: 0 !important;
           padding: 0 !important;
@@ -112,6 +129,19 @@ export const PrintStyles: React.FC<PrintStylesProps> = ({
           background: white !important;
           -webkit-text-size-adjust: 100% !important;
           -ms-text-size-adjust: 100% !important;
+        }
+        
+        /* Browser-specific font rendering fixes */
+        @supports (-webkit-font-smoothing: antialiased) {
+          body {
+            -webkit-font-smoothing: antialiased !important;
+          }
+        }
+        
+        @supports (-moz-osx-font-smoothing: grayscale) {
+          body {
+            -moz-osx-font-smoothing: grayscale !important;
+          }
         }
         
         /* Hide non-printable elements */
@@ -190,25 +220,59 @@ export const PrintStyles: React.FC<PrintStylesProps> = ({
         /* Invoice specific styles */
         ${documentType === 'invoice' ? `
           #invoice-pdf {
-            width: 100% !important;
-            height: auto !important;
+            width: ${orientation === 'landscape' ? '420mm' : '100%'} !important;
+            min-height: ${orientation === 'landscape' ? '297mm' : 'auto'} !important;
+            max-width: 100% !important;
             transform: none !important;
             scale: none !important;
             margin: 0 !important;
             padding: 0 !important;
+            box-sizing: border-box !important;
+          }
+          
+          /* Ensure invoice fits landscape page properly */
+          @page {
+            size: A4 landscape !important;
+            margin: 0.2in !important;
+          }
+          
+          /* Browser-specific invoice width fixes */
+          @supports (-webkit-appearance: none) {
+            /* WebKit browsers */
+            #invoice-pdf {
+              width: 420mm !important;
+              max-width: 100% !important;
+            }
+          }
+          
+          @supports (print-color-adjust: exact) {
+            /* Firefox and modern browsers */
+            #invoice-pdf {
+              width: 420mm !important;
+              max-width: 100% !important;
+            }
           }
           
           .invoice-table {
-            font-size: 9px !important;
+            font-size: 11px !important;
             width: 100% !important;
             table-layout: fixed !important;
           }
           
           .invoice-table th,
           .invoice-table td {
-            padding: 3px 4px !important;
-            font-size: 9px !important;
+            padding: 5px 6px !important;
+            font-size: 11px !important;
             border: 1px solid #000 !important;
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            line-height: 1.4 !important;
+          }
+          
+          .invoice-table th {
+            background-color: #f5f5f5 !important;
+            font-weight: bold !important;
           }
           
           .invoice-header {
