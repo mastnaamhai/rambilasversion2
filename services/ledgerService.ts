@@ -190,25 +190,49 @@ export class LedgerService {
             notes: payment.notes || `Payment Mode: ${payment.mode}`
           });
         } else {
-          // Cash/Bank (Debit)
+          // Handle TDS for Receipts (Option 3a: TDS deducted from payment amount)
+          const hasTDS = payment.tdsApplicable && payment.type === PaymentType.RECEIPT && payment.tdsAmount && payment.tdsAmount > 0;
+          const grossAmount = hasTDS ? (payment.amount + payment.tdsAmount!) : payment.amount;
+          const netAmount = payment.amount; // Already net after TDS deduction
+
+          // Cash/Bank (Debit) - Net amount received (after TDS)
           entries.push({
             date: payment.date,
-            particulars: `Payment received from ${payment.customer?.name || 'Unknown Customer'}`,
-            debit: payment.amount,
+            particulars: hasTDS 
+              ? `Payment received from ${payment.customer?.name || 'Unknown Customer'} (Net after TDS: ₹${payment.tdsAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })})`
+              : `Payment received from ${payment.customer?.name || 'Unknown Customer'}`,
+            debit: netAmount,
             credit: 0,
             balance: 0,
             balanceType: 'DR',
             reference: payment.referenceNo || payment._id.slice(-6),
             customerName: payment.customer?.name,
-            notes: payment.notes || `Payment Mode: ${payment.mode}`
+            notes: hasTDS 
+              ? `${payment.notes || ''} Payment Mode: ${payment.mode}. TDS @ ${payment.tdsRate}%: ₹${payment.tdsAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`.trim()
+              : payment.notes || `Payment Mode: ${payment.mode}`
           });
 
-          // Accounts Receivable (Credit)
+          // TDS Payable (Credit) - Only if TDS is applicable
+          if (hasTDS) {
+            entries.push({
+              date: payment.tdsDate || payment.date,
+              particulars: `TDS deducted from payment received from ${payment.customer?.name || 'Unknown Customer'} @ ${payment.tdsRate}%`,
+              debit: 0,
+              credit: payment.tdsAmount!,
+              balance: 0,
+              balanceType: 'CR',
+              reference: payment.referenceNo || payment._id.slice(-6),
+              customerName: payment.customer?.name,
+              notes: `TDS @ ${payment.tdsRate}% on gross payment of ₹${grossAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+            });
+          }
+
+          // Accounts Receivable (Credit) - Gross amount (before TDS)
           entries.push({
             date: payment.date,
-            particulars: `Payment for ${payment.invoiceId ? `INV-${typeof payment.invoiceId === 'string' ? payment.invoiceId : (payment.invoiceId as Invoice).invoiceNumber}` : 'General Payment'} - ${payment.customer?.name || 'Unknown Customer'}`,
+            particulars: `Payment for ${payment.invoiceId ? `INV-${typeof payment.invoiceId === 'string' ? payment.invoiceId : (payment.invoiceId as Invoice).invoiceNumber}` : 'General Payment'} - ${payment.customer?.name || 'Unknown Customer'}${hasTDS ? ` (Gross: ₹${grossAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}, TDS: ₹${payment.tdsAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })})` : ''}`,
             debit: 0,
-            credit: payment.amount,
+            credit: grossAmount,
             balance: 0,
             balanceType: 'CR',
             reference: payment.invoiceId ? `INV-${typeof payment.invoiceId === 'string' ? payment.invoiceId : (payment.invoiceId as Invoice).invoiceNumber}` : undefined,

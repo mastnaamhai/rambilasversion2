@@ -107,7 +107,43 @@ export const createPayment = asyncHandler(async (req: Request, res: Response) =>
     
     const { invoiceId, truckHiringNoteId } = paymentData;
 
-    // Generate payment number
+    // Handle TDS calculation (Option 3a: TDS deducted from payment amount)
+    let finalAmount = paymentData.amount;
+    let tdsAmount = paymentData.tdsAmount;
+    let tdsDate = paymentData.tdsDate || paymentData.date;
+
+    if (paymentData.tdsApplicable && paymentData.type === PaymentType.RECEIPT) {
+      // Validate TDS rate is provided
+      if (!paymentData.tdsRate && paymentData.tdsRate !== 0) {
+        res.status(400).json({
+          message: 'Validation failed',
+          error: 'TDS rate is required when TDS is applicable'
+        });
+        return;
+      }
+
+      // Calculate TDS amount if not provided
+      if (tdsAmount === undefined || tdsAmount === null) {
+        tdsAmount = paymentData.amount * (paymentData.tdsRate! / 100);
+      }
+
+      // For Option 3a: payment.amount should be NET amount (gross - TDS)
+      // If frontend sent gross amount, calculate net; otherwise use amount as-is (assuming it's already net)
+      // Note: Frontend should send net amount, but we'll handle both cases
+      // For now, assuming amount is gross if tdsAmount was not provided
+      if (paymentData.tdsAmount === undefined) {
+        finalAmount = paymentData.amount - tdsAmount;
+      } else {
+        // Frontend already calculated net, so amount is already net
+        finalAmount = paymentData.amount;
+      }
+    } else {
+      // Clear TDS fields if not applicable
+      tdsAmount = undefined;
+      paymentData.tdsRate = undefined;
+      tdsDate = undefined;
+    }
+
     // Generate payment number
     let paymentNumber = Date.now(); // Fallback
     const config = await NumberingConfig.findOne({ type: 'paymentId' });
@@ -119,6 +155,9 @@ export const createPayment = asyncHandler(async (req: Request, res: Response) =>
     
     const payment = new Payment({
       ...paymentData,
+      amount: finalAmount, // Store net amount after TDS deduction
+      tdsAmount,
+      tdsDate,
       paymentNumber
     });
     const newPayment = await payment.save();
@@ -184,7 +223,44 @@ export const createPayment = asyncHandler(async (req: Request, res: Response) =>
 
 export const updatePayment = asyncHandler(async (req: Request, res: Response) => {
   const paymentData = updatePaymentSchema.parse(req.body);
-  const updatedPayment = await Payment.findByIdAndUpdate(req.params.id, paymentData, { new: true });
+  
+  // Handle TDS calculation for updates (Option 3a: TDS deducted from payment amount)
+  let updateData: any = { ...paymentData };
+  
+  if (paymentData.tdsApplicable !== undefined && paymentData.tdsApplicable && paymentData.type === PaymentType.RECEIPT) {
+    // Validate TDS rate is provided
+    if (paymentData.tdsRate === undefined && paymentData.tdsRate !== 0) {
+      res.status(400).json({
+        message: 'Validation failed',
+        error: 'TDS rate is required when TDS is applicable'
+      });
+      return;
+    }
+
+    // Calculate TDS amount if not provided
+    let tdsAmount = paymentData.tdsAmount;
+    if (tdsAmount === undefined || tdsAmount === null) {
+      const baseAmount = paymentData.amount !== undefined ? paymentData.amount : 
+                        (await Payment.findById(req.params.id))?.amount || 0;
+      tdsAmount = baseAmount * ((paymentData.tdsRate || 0) / 100);
+    }
+
+    // For Option 3a: adjust amount to net (gross - TDS)
+    // If amount is being updated, assume it's gross if tdsAmount wasn't provided
+    if (paymentData.amount !== undefined && paymentData.tdsAmount === undefined) {
+      updateData.amount = paymentData.amount - tdsAmount;
+    }
+    
+    updateData.tdsAmount = tdsAmount;
+    updateData.tdsDate = paymentData.tdsDate || paymentData.date;
+  } else if (paymentData.tdsApplicable === false) {
+    // Clear TDS fields if TDS is disabled
+    updateData.tdsAmount = undefined;
+    updateData.tdsRate = undefined;
+    updateData.tdsDate = undefined;
+  }
+
+  const updatedPayment = await Payment.findByIdAndUpdate(req.params.id, updateData, { new: true });
 
   if (!updatedPayment) {
     res.status(404);

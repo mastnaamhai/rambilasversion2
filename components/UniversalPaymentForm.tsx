@@ -44,17 +44,28 @@ export const UniversalPaymentForm: React.FC<UniversalPaymentFormProps> = ({
         invoiceId,
         truckHiringNoteId,
         ...(customerId && { customer: customerId }),
-        amount: Math.abs(balanceDue), // Use absolute value for payment amount
+        amount: Math.abs(balanceDue), // Use absolute value for payment amount (gross amount)
         date: getCurrentDate(),
         type: PaymentType.RECEIPT,
         mode: PaymentMode.CASH,
         referenceNo: '',
         notes: '',
+        // TDS fields
+        tdsApplicable: false,
+        tdsRate: 0,
+        tdsAmount: 0,
+        tdsDate: getCurrentDate(),
     });
     
     console.log('Initial payment state:', JSON.stringify(payment, null, 2));
     
     const [isSaving, setIsSaving] = useState(false);
+
+    // Calculate TDS and net amount
+    const grossAmount = payment.amount || 0;
+    const tdsRate = payment.tdsApplicable ? (payment.tdsRate || 0) : 0;
+    const calculatedTdsAmount = payment.tdsApplicable ? (grossAmount * (tdsRate / 100)) : 0;
+    const netAmount = grossAmount - calculatedTdsAmount;
 
     // Validation rules
     const validationRules = {
@@ -75,7 +86,17 @@ export const UniversalPaymentForm: React.FC<UniversalPaymentFormProps> = ({
                 return null;
             }
         },
-        notes: fieldRules.notes
+        notes: fieldRules.notes,
+        tdsRate: {
+            custom: (value: number) => {
+                if (payment.tdsApplicable && payment.type === PaymentType.RECEIPT) {
+                    if (!value || value <= 0 || value > 100) {
+                        return 'TDS rate must be between 0.01% and 100%';
+                    }
+                }
+                return null;
+            }
+        }
     };
 
     // Form validation hook
@@ -107,10 +128,17 @@ export const UniversalPaymentForm: React.FC<UniversalPaymentFormProps> = ({
 
     const handleValueChange = (fieldName: string, value: any) => {
         clearFieldError(fieldName);
-        setPayment(prev => ({
-            ...prev,
-            [fieldName]: value,
-        }));
+        setPayment(prev => {
+            const updated = {
+                ...prev,
+                [fieldName]: value,
+            };
+            // Auto-update TDS date when payment date changes
+            if (fieldName === 'date' && updated.tdsApplicable) {
+                updated.tdsDate = value;
+            }
+            return updated;
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -129,8 +157,24 @@ export const UniversalPaymentForm: React.FC<UniversalPaymentFormProps> = ({
 
         setIsSaving(true);
         try {
-            console.log('Sending payment data:', JSON.stringify(payment, null, 2));
-            await onSave(payment);
+            // For Option 3a: Calculate net amount (gross - TDS) and prepare payment data
+            const paymentToSave = {
+                ...payment,
+                amount: netAmount, // Send net amount after TDS deduction
+                tdsAmount: calculatedTdsAmount,
+                tdsDate: payment.tdsDate || payment.date,
+            };
+
+            // Clear TDS fields if not applicable
+            if (!payment.tdsApplicable || payment.type !== PaymentType.RECEIPT) {
+                delete paymentToSave.tdsApplicable;
+                delete paymentToSave.tdsRate;
+                delete paymentToSave.tdsAmount;
+                delete paymentToSave.tdsDate;
+            }
+
+            console.log('Sending payment data:', JSON.stringify(paymentToSave, null, 2));
+            await onSave(paymentToSave);
             onClose();
         } catch (error) {
             console.error('Failed to save payment', error);
@@ -287,6 +331,69 @@ export const UniversalPaymentForm: React.FC<UniversalPaymentFormProps> = ({
                                 />
                             )}
 
+                            {/* TDS Section - Only for Receipts */}
+                            {payment.type === PaymentType.RECEIPT && (
+                                <FormSection title="TDS (Tax Deducted at Source)">
+                                    <div className="space-y-4">
+                                        <div className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                id="tdsApplicable"
+                                                checked={payment.tdsApplicable || false}
+                                                onChange={(e) => handleValueChange('tdsApplicable', e.target.checked)}
+                                                className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                            />
+                                            <label htmlFor="tdsApplicable" className="text-sm font-medium text-gray-700">
+                                                TDS Applicable
+                                            </label>
+                                        </div>
+
+                                        {payment.tdsApplicable && (
+                                            <div className="space-y-4 pl-6 border-l-2 border-blue-200">
+                                                <ValidatedInput
+                                                    fieldName="tdsRate"
+                                                    validationRules={validationRules}
+                                                    value={payment.tdsRate || ''}
+                                                    onValueChange={(value) => handleValueChange('tdsRate', parseFloat(value) || 0)}
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    step="0.01"
+                                                    required
+                                                    placeholder="TDS Rate (%)"
+                                                    label="TDS Rate (%)"
+                                                />
+                                                <ValidatedInput
+                                                    fieldName="tdsDate"
+                                                    validationRules={validationRules}
+                                                    value={payment.tdsDate || payment.date}
+                                                    onValueChange={(value) => handleValueChange('tdsDate', value)}
+                                                    type="date"
+                                                    required
+                                                    label="TDS Date"
+                                                />
+                                                
+                                                {/* TDS Calculation Display */}
+                                                <div className="bg-gray-50 border border-gray-200 rounded-md p-4 space-y-2">
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className="text-gray-600">Gross Payment Amount:</span>
+                                                        <span className="font-semibold">₹{grossAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className="text-gray-600">TDS Amount ({tdsRate}%):</span>
+                                                        <span className="font-semibold text-red-600">- ₹{calculatedTdsAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                                    </div>
+                                                    <div className="border-t border-gray-300 pt-2 flex justify-between">
+                                                        <span className="text-gray-700 font-medium">Net Amount Received:</span>
+                                                        <span className="font-bold text-green-600">₹{netAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </FormSection>
+                            )}
+
                             <ValidatedTextarea
                                 fieldName="notes"
                                 validationRules={validationRules}
@@ -301,15 +408,22 @@ export const UniversalPaymentForm: React.FC<UniversalPaymentFormProps> = ({
                         <FormSection title="Payment Summary">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Payment Amount</label>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        {payment.tdsApplicable ? 'Net Payment Amount (After TDS)' : 'Payment Amount'}
+                                    </label>
                                     <div className="mt-1 p-3 border border-gray-300 rounded-md bg-white font-semibold text-lg">
-                                        ₹{payment.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                        ₹{netAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                     </div>
+                                    {payment.tdsApplicable && (
+                                        <div className="mt-1 text-xs text-gray-500">
+                                            Gross: ₹{grossAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })} - TDS: ₹{calculatedTdsAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                        </div>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Remaining Balance</label>
                                     <div className="mt-1 p-3 border border-gray-300 rounded-md bg-white font-semibold text-lg text-red-600">
-                                        ₹{(Math.abs(balanceDue) - payment.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                        ₹{(Math.abs(balanceDue) - netAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                     </div>
                                 </div>
                             </div>

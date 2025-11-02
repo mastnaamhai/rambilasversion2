@@ -12,6 +12,11 @@ export interface IPayment extends Document {
   mode: PaymentMode;
   referenceNo?: string;
   notes?: string;
+  // TDS fields
+  tdsApplicable?: boolean;
+  tdsRate?: number;
+  tdsAmount?: number;
+  tdsDate?: string;
 }
 
 const PaymentSchema = new Schema({
@@ -25,6 +30,11 @@ const PaymentSchema = new Schema({
   mode: { type: String, enum: Object.values(PaymentMode), required: true },
   referenceNo: { type: String },
   notes: { type: String },
+  // TDS fields
+  tdsApplicable: { type: Boolean, default: false },
+  tdsRate: { type: Number },
+  tdsAmount: { type: Number },
+  tdsDate: { type: String },
 });
 
 export default model<IPayment>('Payment', PaymentSchema);

@@ -95,10 +95,31 @@ export const createPaymentSchema = z.object({
   mode: z.nativeEnum(PaymentMode),
   referenceNo: z.string().optional(),
   notes: z.string().optional(),
+  // TDS fields
+  tdsApplicable: z.boolean().optional(),
+  tdsRate: z.number().min(0).max(100).optional(),
+  tdsAmount: z.number().nonnegative().optional(),
+  tdsDate: z.string().optional(),
 }).refine(data => data.invoiceId || data.truckHiringNoteId, {
   message: 'Either invoiceId or truckHiringNoteId is required',
 }).refine(data => data.invoiceId ? (data.customer && data.customer.trim().length > 0) : true, {
   message: 'Customer is required for invoice payments',
+}).refine(data => {
+  // TDS can only be applied to Receipts
+  if (data.tdsApplicable && data.type !== PaymentType.RECEIPT) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'TDS can only be applied to Receipts',
+}).refine(data => {
+  // If TDS is applicable, rate is required
+  if (data.tdsApplicable && (data.tdsRate === undefined || data.tdsRate === null)) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'TDS rate is required when TDS is applicable',
 });
 
 export const updatePaymentSchema = createPaymentSchema.partial();

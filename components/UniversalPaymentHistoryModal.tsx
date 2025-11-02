@@ -99,6 +99,9 @@ export const UniversalPaymentHistoryModal: React.FC<UniversalPaymentHistoryModal
                                                 Amount
                                             </th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                TDS
+                                            </th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Type
                                             </th>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -142,43 +145,74 @@ export const UniversalPaymentHistoryModal: React.FC<UniversalPaymentHistoryModal
                                                 </td>
                                             </tr>
                                         )}
-                                        {sortedPayments.map((payment, index) => (
-                                            <tr key={payment._id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {formatDate(payment.date)}
-                                                </td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
-                                                    ₹{payment.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                                                </td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                                                        payment.type === 'Advance' ? 'bg-blue-100 text-blue-800' :
-                                                        payment.type === 'Receipt' ? 'bg-green-100 text-green-800' :
-                                                        'bg-purple-100 text-purple-800'
-                                                    }`}>
-                                                        {payment.type}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                                                        payment.mode === 'Cash' ? 'bg-gray-100 text-gray-800' :
-                                                        payment.mode === 'UPI' ? 'bg-purple-100 text-purple-800' :
-                                                        payment.mode === 'NEFT' || payment.mode === 'RTGS' ? 'bg-blue-100 text-blue-800' :
-                                                        'bg-yellow-100 text-yellow-800'
-                                                    }`}>
-                                                        {payment.mode}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {payment.referenceNo || '-'}
-                                                </td>
-                                                <td className="px-4 py-4 text-sm text-gray-500 max-w-xs">
-                                                    <div className="truncate" title={payment.notes || ''}>
-                                                        {payment.notes || '-'}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {sortedPayments.map((payment, index) => {
+                                            const grossAmount = payment.amount + (payment.tdsAmount || 0);
+                                            const hasTDS = payment.tdsApplicable && payment.tdsAmount && payment.tdsAmount > 0;
+                                            
+                                            return (
+                                                <tr key={payment._id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                        {formatDate(payment.date)}
+                                                    </td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
+                                                        <div>
+                                                            ₹{payment.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                            {hasTDS && (
+                                                                <div className="text-xs text-gray-500 font-normal">
+                                                                    (Net after TDS)
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {hasTDS ? (
+                                                            <div className="space-y-1">
+                                                                <div className="font-medium text-red-600">
+                                                                    ₹{payment.tdsAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                                </div>
+                                                                <div className="text-xs text-gray-400">
+                                                                    @ {payment.tdsRate}%
+                                                                </div>
+                                                                {payment.tdsDate && (
+                                                                    <div className="text-xs text-gray-400">
+                                                                        {formatDate(payment.tdsDate)}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-gray-400">-</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                                            payment.type === 'Advance' ? 'bg-blue-100 text-blue-800' :
+                                                            payment.type === 'Receipt' ? 'bg-green-100 text-green-800' :
+                                                            'bg-purple-100 text-purple-800'
+                                                        }`}>
+                                                            {payment.type}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                                            payment.mode === 'Cash' ? 'bg-gray-100 text-gray-800' :
+                                                            payment.mode === 'UPI' ? 'bg-purple-100 text-purple-800' :
+                                                            payment.mode === 'NEFT' || payment.mode === 'RTGS' ? 'bg-blue-100 text-blue-800' :
+                                                            'bg-yellow-100 text-yellow-800'
+                                                        }`}>
+                                                            {payment.mode}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {payment.referenceNo || '-'}
+                                                    </td>
+                                                    <td className="px-4 py-4 text-sm text-gray-500 max-w-xs">
+                                                        <div className="truncate" title={payment.notes || ''}>
+                                                            {payment.notes || '-'}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>

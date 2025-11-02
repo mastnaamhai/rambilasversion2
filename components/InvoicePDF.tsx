@@ -163,7 +163,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                 
                 .invoice-table {
                     page-break-inside: avoid;
-                    font-size: 12px;
+                    font-size: 16px;
                     width: 100%;
                     table-layout: fixed;
                     border-collapse: collapse;
@@ -182,24 +182,24 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     background-color: #f3f4f6;
                     font-weight: 600;
                     text-align: center;
-                    font-size: 12px;
+                    font-size: 16px;
                     white-space: normal;
                 }
                 
                 .invoice-table td {
                     text-align: center;
-                    font-size: 12px;
+                    font-size: 16px;
                     white-space: normal;
                     overflow-wrap: break-word;
                 }
                 
                 .invoice-table .text-left {
-                    text-align: left !important;
+                    text-align: center !important;
                     white-space: normal;
                 }
                 
                 .invoice-table .text-right {
-                    text-align: right;
+                    text-align: center !important;
                 }
                 
                 /* Column width optimization for landscape - better space utilization */
@@ -240,13 +240,13 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     transform: scale(${tableScale}) !important;
                     transform-origin: top left !important;
                     width: ${100 / tableScale}% !important;
-                    font-size: ${Math.max(8, 12 * tableScale)}px !important;
+                    font-size: ${Math.max(10, 16 * tableScale)}px !important;
                 }
                 
                 .charges-table th,
                 .charges-table td {
                     padding: ${Math.max(3, 8 * tableScale)}px ${Math.max(3, 6 * tableScale)}px !important;
-                    font-size: ${Math.max(8, 12 * tableScale)}px !important;
+                    font-size: ${Math.max(10, 16 * tableScale)}px !important;
                 }
                 
                 .invoice-table .text-right {
@@ -293,7 +293,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     
                     /* Ensure tables fit properly in landscape with auto-scaling */
                     .invoice-table {
-                        font-size: ${Math.max(8, 12 * tableScale)}px !important;
+                        font-size: ${Math.max(12, 16 * tableScale)}px !important;
                         width: 100% !important;
                         table-layout: fixed !important;
                         page-break-inside: avoid !important;
@@ -303,7 +303,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     .invoice-table th,
                     .invoice-table td {
                         padding: ${Math.max(3, 8 * tableScale)}px ${Math.max(3, 6 * tableScale)}px !important;
-                        font-size: ${Math.max(8, 12 * tableScale)}px !important;
+                        font-size: ${Math.max(12, 16 * tableScale)}px !important;
                         line-height: 1.4 !important;
                         word-wrap: break-word !important;
                         overflow-wrap: break-word !important;
@@ -373,45 +373,57 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
             `}</style>
             <div className="w-full">
                 {/* Header */}
-                <div className="text-center mb-8">
-                    <div className="flex justify-center items-center mb-4">
-                        <Logo 
-                            size="xl" 
-                            showText={true} 
-                            className="justify-center"
-                            textClassName="text-3xl font-bold"
-                            companyLogo={companyInfo?.logo}
-                            companyName={companyInfo?.name}
-                        />
+                <div className="mb-6 pb-4 border-b border-gray-400">
+                    {/* Logo and Company Name - Centered */}
+                    <div className="flex items-center justify-center gap-5 mb-3">
+                        <div className="flex-shrink-0" style={{ width: '100px', height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ transform: 'scale(1.8)', transformOrigin: 'center' }}>
+                                <Logo 
+                                    size="xl" 
+                                    showText={false}
+                                    companyLogo={companyInfo?.logo}
+                                    companyName={companyInfo?.name}
+                                />
+                            </div>
+                        </div>
+                        <h1 className="font-bold text-red-600 uppercase leading-tight" style={{ fontSize: '48px', letterSpacing: '2px', color: '#DC2626', fontWeight: '900' }}>
+                            {companyInfo?.name || 'ALL INDIA LOGISTICS CHENNAI'}
+                        </h1>
                     </div>
-                    <p className="text-gray-600 text-sm">{companyInfo?.address || 'Company Address'}</p>
-                    <p className="text-gray-600 text-sm font-semibold">PH: {companyInfo?.phone1 || 'N/A'} / {companyInfo?.phone2 || 'N/A'}</p>
-                    <div className="flex justify-center space-x-4 text-gray-600 text-sm">
-                        <span>E-Mail : {companyInfo?.email || 'N/A'}</span>
-                        <span>Web :- {companyInfo?.website || 'N/A'}</span>
+                    
+                    {/* Company Details - Centered */}
+                    <div className="text-center">
+                        <p className="text-gray-700 text-base mb-1">{companyInfo?.address || 'Company Address'}</p>
+                        <p className="text-gray-700 text-base font-semibold mb-1">
+                            PH: {companyInfo?.phone1 || 'N/A'} / {companyInfo?.phone2 || 'N/A'}
+                        </p>
+                        <div className="flex justify-center items-center gap-4 text-gray-700 text-base mb-1">
+                            <span>E-Mail:- {companyInfo?.email || 'N/A'}</span>
+                            <span>Web :- {companyInfo?.website || 'N/A'}</span>
+                        </div>
+                        <p className="font-bold text-base mt-1">GSTIN: {companyInfo?.gstin || 'N/A'}</p>
                     </div>
-                    <p className="font-bold mt-2 text-sm">GSTIN: {companyInfo?.gstin || 'N/A'}</p>
                 </div>
 
                 {/* Customer and Invoice Details */}
                 <div className="invoice-header border-t border-b border-gray-400 py-4 mb-4">
                     <div className="invoice-details">
                         <div>
-                            <p><span className="font-bold w-24 inline-block">Customer :</span> {client?.name}</p>
-                            <p className="flex items-start gap-2">
-                                <span className="font-bold w-24 inline-block flex-shrink-0">Address :</span>
-                                <span className="whitespace-pre-line text-xs flex-1">{client?.address}</span>
+                            <p className="text-base"><span className="font-bold w-24 inline-block">Customer :</span> {client?.name}</p>
+                            <p className="flex items-start gap-2 text-base">
+                                <span className="font-bold w-24 inline-block flex-shrink-0">Add :</span>
+                                <span className="whitespace-pre-line flex-1">{client?.address}</span>
                             </p>
-                            <p><span className="font-bold w-24 inline-block">GSTIN/- :</span> {client?.gstin}</p>
+                            <p className="text-base"><span className="font-bold w-24 inline-block">GSTIN: </span> {client?.gstin}</p>
                         </div>
                         <div className="text-right">
-                            <p><span className="font-bold">Invoice No :</span> {invoice.invoiceNumber}</p>
-                            <p><span className="font-bold">Date :</span> {formatDate(invoice.date)}</p>
+                            <p className="text-base font-bold">Invoice No : {invoice.invoiceNumber}</p>
+                            <p className="text-base font-bold">Date : {formatDate(invoice.date)}</p>
                         </div>
                     </div>
                 </div>
 
-                <p className="mb-4 font-semibold">Sub : {originLocationText}</p>
+                <p className="mb-4 font-semibold text-base">Sub : {originLocationText}</p>
                 
                 {/* Lorry Receipts Table */}
                 <div className="mb-4 no-break">
@@ -420,7 +432,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                             <strong>Note:</strong> Table has been automatically scaled to {Math.round(tableScale * 100)}% to fit all {lrCount} lorry receipts on one page.
                         </div>
                     )}
-                    <table className="w-full text-xs border-collapse border border-gray-400 invoice-table">
+                    <table className="w-full border-collapse border border-gray-400 invoice-table">
                     <thead className="bg-gray-100">
                         <tr className="border-b-2 border-black">
                             <th className="p-2 border border-gray-300 font-semibold text-center">LR Number</th>
@@ -434,25 +446,25 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                             )}
                             <th className="p-2 border border-gray-300 font-semibold text-center">Invoice Number</th>
                             <th className="p-2 border border-gray-300 font-semibold text-center">Consigner Name</th>
-                            <th className="p-2 border border-gray-300 text-right font-semibold">Packages</th>
-                            <th className="p-2 border border-gray-300 text-right font-semibold">Weight (kg)</th>
+                            <th className="p-2 border border-gray-300 text-center font-semibold">Packages</th>
+                            <th className="p-2 border border-gray-300 text-center font-semibold">Weight (kg)</th>
                             <th className="p-2 border border-gray-300 text-center font-semibold">Material</th>
                             {!(invoice.isRcm === true) && (
-                                <th className="p-2 border border-gray-300 text-right font-semibold">Total Charges (₹)</th>
+                                <th className="p-2 border border-gray-300 text-center font-semibold">Total Charges (₹)</th>
                             )}
                             {!(invoice.isRcm === true) && (
-                                <th className="p-2 border border-gray-300 text-right font-semibold">Taxable Amount (₹)</th>
+                                <th className="p-2 border border-gray-300 text-center font-semibold">Taxable Amount (₹)</th>
                             )}
                             {invoice.gstType === GstType.CGST_SGST && (invoice.sgstAmount || 0) > 0 && (
-                                <th className="p-2 border border-gray-300 text-right font-semibold gst-column">SGST (₹)</th>
+                                <th className="p-2 border border-gray-300 text-center font-semibold gst-column">SGST (₹)</th>
                             )}
                             {invoice.gstType === GstType.CGST_SGST && (invoice.cgstAmount || 0) > 0 && (
-                                <th className="p-2 border border-gray-300 text-right font-semibold gst-column">CGST (₹)</th>
+                                <th className="p-2 border border-gray-300 text-center font-semibold gst-column">CGST (₹)</th>
                             )}
                             {invoice.gstType === GstType.IGST && (invoice.igstAmount || 0) > 0 && (
-                                <th className="p-2 border border-gray-300 text-right font-semibold gst-column">IGST (₹)</th>
+                                <th className="p-2 border border-gray-300 text-center font-semibold gst-column">IGST (₹)</th>
                             )}
-                            <th className="p-2 border border-gray-300 text-right font-semibold">Total (₹)</th>
+                            <th className="p-2 border border-gray-300 text-center font-semibold">Total (₹)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -510,30 +522,30 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                                         <td className="p-2 border border-gray-300 text-center text-xs">{lr.deliveryDate ? formatDate(lr.deliveryDate) : '-'}</td>
                                     )}
                                     <td className="p-2 border border-gray-300 text-center text-xs" title={lr.invoiceNo || ''}>{lr.invoiceNo || '-'}</td>
-                                    <td className="p-2 border border-gray-300 text-left text-xs" title={displayParty?.tradeName || displayParty?.name || ''}>
+                                    <td className="p-2 border border-gray-300 text-center text-xs" title={displayParty?.tradeName || displayParty?.name || ''}>
                                         {displayParty?.tradeName || displayParty?.name || '-'}
                                     </td>
-                                    <td className="p-2 border border-gray-300 text-right text-xs">{packs}</td>
-                                    <td className="p-2 border border-gray-300 text-right text-xs">{weight.toLocaleString('en-IN')}</td>
+                                    <td className="p-2 border border-gray-300 text-center text-xs">{packs}</td>
+                                    <td className="p-2 border border-gray-300 text-center text-xs">{weight.toLocaleString('en-IN')}</td>
                                     <td className="p-2 border border-gray-300 text-center text-xs" title={material}>{material}</td>
                                     {!(invoice.isRcm === true) && (
-                                        <td className="p-2 border border-gray-300 text-right text-xs">
+                                        <td className="p-2 border border-gray-300 text-center text-xs">
                                             {totalCharges.toLocaleString('en-IN')}
                                         </td>
                                     )}
                                     {!(invoice.isRcm === true) && (
-                                        <td className="p-2 border border-gray-300 text-right text-xs">{taxableAmount.toLocaleString('en-IN')}</td>
+                                        <td className="p-2 border border-gray-300 text-center text-xs">{taxableAmount.toLocaleString('en-IN')}</td>
                                     )}
                                     {invoice.gstType === GstType.CGST_SGST && (invoice.sgstAmount || 0) > 0 && (
-                                        <td className="p-2 border border-gray-300 text-right text-xs gst-column">{lrSgstAmount.toLocaleString('en-IN')}</td>
+                                        <td className="p-2 border border-gray-300 text-center text-xs gst-column">{lrSgstAmount.toLocaleString('en-IN')}</td>
                                     )}
                                     {invoice.gstType === GstType.CGST_SGST && (invoice.cgstAmount || 0) > 0 && (
-                                        <td className="p-2 border border-gray-300 text-right text-xs gst-column">{lrCgstAmount.toLocaleString('en-IN')}</td>
+                                        <td className="p-2 border border-gray-300 text-center text-xs gst-column">{lrCgstAmount.toLocaleString('en-IN')}</td>
                                     )}
                                     {invoice.gstType === GstType.IGST && (invoice.igstAmount || 0) > 0 && (
-                                        <td className="p-2 border border-gray-300 text-right text-xs gst-column">{lrIgstAmount.toLocaleString('en-IN')}</td>
+                                        <td className="p-2 border border-gray-300 text-center text-xs gst-column">{lrIgstAmount.toLocaleString('en-IN')}</td>
                                     )}
-                                    <td className="p-2 border border-gray-300 text-right text-xs font-semibold">{lrTotal.toLocaleString('en-IN')}</td>
+                                    <td className="p-2 border border-gray-300 text-center text-xs font-semibold">{lrTotal.toLocaleString('en-IN')}</td>
                                 </tr>
                             )
                         })}
@@ -542,7 +554,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     
                     {/* GST Type Information */}
                     {!(invoice.isRcm === true) && (
-                        <div className="mt-2 text-xs text-gray-600">
+                        <div className="mt-2 text-sm text-gray-600">
                             <p className="font-semibold">GST Information:</p>
                             <p>
                                 {invoice.gstType === GstType.CGST_SGST 
@@ -563,7 +575,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                             <strong>Note:</strong> Freight breakdown table scaled to {Math.round(tableScale * 100)}% to match main table.
                         </div>
                     )}
-                    <table className="w-full text-xs border-collapse border border-gray-400 invoice-table charges-table">
+                    <table className="w-full border-collapse border border-gray-400 invoice-table charges-table">
                         <thead className="bg-gray-100">
                             <tr className="border-b-2 border-black">
                                 <th className="p-2 border border-gray-300 font-semibold text-center">LR Number</th>
@@ -589,13 +601,13 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                                     return (
                                         <tr key={lr._id} className="border-b border-gray-300 hover:bg-gray-50">
                                             <td className="p-2 border border-gray-300 text-center text-xs">{lr.lrNumber || ''}</td>
-                                            <td className="p-2 border border-gray-300 text-right text-xs">{freight.toLocaleString('en-IN')}</td>
-                                            <td className="p-2 border border-gray-300 text-right text-xs">{aoc.toLocaleString('en-IN')}</td>
-                                            <td className="p-2 border border-gray-300 text-right text-xs">{hamali.toLocaleString('en-IN')}</td>
-                                            <td className="p-2 border border-gray-300 text-right text-xs">{bCh.toLocaleString('en-IN')}</td>
-                                            <td className="p-2 border border-gray-300 text-right text-xs">{trCh.toLocaleString('en-IN')}</td>
-                                            <td className="p-2 border border-gray-300 text-right text-xs">{detentionCh.toLocaleString('en-IN')}</td>
-                                            <td className="p-2 border border-gray-300 text-right text-xs font-semibold">{totalCharges.toLocaleString('en-IN')}</td>
+                                            <td className="p-2 border border-gray-300 text-center text-xs">{freight.toLocaleString('en-IN')}</td>
+                                            <td className="p-2 border border-gray-300 text-center text-xs">{aoc.toLocaleString('en-IN')}</td>
+                                            <td className="p-2 border border-gray-300 text-center text-xs">{hamali.toLocaleString('en-IN')}</td>
+                                            <td className="p-2 border border-gray-300 text-center text-xs">{bCh.toLocaleString('en-IN')}</td>
+                                            <td className="p-2 border border-gray-300 text-center text-xs">{trCh.toLocaleString('en-IN')}</td>
+                                            <td className="p-2 border border-gray-300 text-center text-xs">{detentionCh.toLocaleString('en-IN')}</td>
+                                            <td className="p-2 border border-gray-300 text-center text-xs font-semibold">{totalCharges.toLocaleString('en-IN')}</td>
                                         </tr>
                                     );
                                 })}
@@ -603,13 +615,13 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                             <tfoot className="font-bold bg-gray-200">
                                 <tr className="border-t-2 border-black">
                                     <td className="p-2 border border-gray-300 text-center text-xs">Totals:</td>
-                                    <td className="p-2 border border-gray-300 text-right text-xs">{totalFreight.toLocaleString('en-IN')}</td>
-                                    <td className="p-2 border border-gray-300 text-right text-xs">{(invoice.lorryReceipts || []).reduce((sum, lr) => sum + (lr.charges?.aoc || 0), 0).toLocaleString('en-IN')}</td>
-                                    <td className="p-2 border border-gray-300 text-right text-xs">{(invoice.lorryReceipts || []).reduce((sum, lr) => sum + (lr.charges?.hamali || 0), 0).toLocaleString('en-IN')}</td>
-                                    <td className="p-2 border border-gray-300 text-right text-xs">{(invoice.lorryReceipts || []).reduce((sum, lr) => sum + (lr.charges?.bCh || 0), 0).toLocaleString('en-IN')}</td>
-                                    <td className="p-2 border border-gray-300 text-right text-xs">{(invoice.lorryReceipts || []).reduce((sum, lr) => sum + (lr.charges?.trCh || 0), 0).toLocaleString('en-IN')}</td>
-                                    <td className="p-2 border border-gray-300 text-right text-xs">{(invoice.lorryReceipts || []).reduce((sum, lr) => sum + (lr.charges?.detentionCh || 0), 0).toLocaleString('en-IN')}</td>
-                                    <td className="p-2 border border-gray-300 text-right text-xs">{subTotal.toLocaleString('en-IN')}</td>
+                                    <td className="p-2 border border-gray-300 text-center text-xs">{totalFreight.toLocaleString('en-IN')}</td>
+                                    <td className="p-2 border border-gray-300 text-center text-xs">{(invoice.lorryReceipts || []).reduce((sum, lr) => sum + (lr.charges?.aoc || 0), 0).toLocaleString('en-IN')}</td>
+                                    <td className="p-2 border border-gray-300 text-center text-xs">{(invoice.lorryReceipts || []).reduce((sum, lr) => sum + (lr.charges?.hamali || 0), 0).toLocaleString('en-IN')}</td>
+                                    <td className="p-2 border border-gray-300 text-center text-xs">{(invoice.lorryReceipts || []).reduce((sum, lr) => sum + (lr.charges?.bCh || 0), 0).toLocaleString('en-IN')}</td>
+                                    <td className="p-2 border border-gray-300 text-center text-xs">{(invoice.lorryReceipts || []).reduce((sum, lr) => sum + (lr.charges?.trCh || 0), 0).toLocaleString('en-IN')}</td>
+                                    <td className="p-2 border border-gray-300 text-center text-xs">{(invoice.lorryReceipts || []).reduce((sum, lr) => sum + (lr.charges?.detentionCh || 0), 0).toLocaleString('en-IN')}</td>
+                                    <td className="p-2 border border-gray-300 text-center text-xs">{subTotal.toLocaleString('en-IN')}</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -618,13 +630,13 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                 
                 {/* Total */}
                  <div className="flex justify-end mb-4 no-break">
-                    <div className="w-2/5 space-y-1 text-sm">
+                    <div className="w-2/5 space-y-1 text-base">
                         <div className="flex justify-between">
                             <span>Sub Total:</span>
                             <span>{(invoice.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                         {invoice.isAutoFreightCalculated && (
-                            <div className="flex justify-between text-xs text-gray-600">
+                            <div className="flex justify-between text-sm text-gray-600">
                                 <span>Freight (Auto-calculated):</span>
                                 <span>₹{totalFreight.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
@@ -635,33 +647,34 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                                 <span>{(invoice.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
                         )}
-                        <div className="flex justify-between font-bold border-t-2 border-b-2 border-black py-1 text-base">
+                        <div className="flex justify-between font-bold border-t-2 border-b-2 border-black py-1 text-lg">
                             <span>Grand Total:</span>
                             <span>{(invoice.grandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                     </div>
                 </div>
 
-                {/* RCM Notice */}
-                {invoice.isRcm && (
-                    <div className="text-center font-bold text-gray-700 my-4 p-2 border border-dashed border-gray-400">
-                        <p>GST Payable under Reverse Charge as per Notification No. 13/2017 – CT (Rate).</p>
-                    </div>
-                )}
-
                 {/* Amount in words and Remarks */}
-                <div className="mb-8 text-sm no-break">
+                <div className="mb-8 text-base no-break">
                     <p><span className="font-bold">Rs : </span>{numberToWords(Math.round(invoice.grandTotal || 0))} Only /-</p>
-                    <p><span className="font-bold">Remark :</span> {invoice.remarks || ''}</p>
+                    {invoice.isRcm ? (
+                        <div>
+                            <p className="font-bold mb-2">GSTIN NOTE:</p>
+                            <p>(1) Registration Under GST For Goods Transport Agency Is Exempted.</p>
+                            <p>(2) GST On Goods Transport Agency (GTA) Services Is Payable By The Service Receiver Under Reverse Charge Mechanism</p>
+                        </div>
+                    ) : (
+                        <p><span className="font-bold">Remark :</span> {invoice.remarks || ''}</p>
+                    )}
                 </div>
 
                 {/* Footer */}
                 <div className="flex justify-between items-end pt-4 border-t">
                     <div className="relative">
-                        <p className="font-bold">FOR {companyInfo?.name || 'Company Name'}</p>
+                        <p className="font-bold text-base">FOR {companyInfo?.name || 'Company Name'}</p>
                         <div className="w-32 h-20 border-2 border-blue-500 rounded-full flex items-center justify-center text-blue-500 -rotate-12 mt-4">
                             <div className="text-center leading-tight">
-                                <p className="font-bold">ALL INDIA</p>
+                                <p className="font-bold text-sm">ALL INDIA</p>
                                 <p className="font-bold text-xs">LOGISTICS</p>
                                 <p className="text-xs">MUMBAI</p>
                                 <p className="text-xs">400 001</p>
@@ -669,7 +682,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                         </div>
                     </div>
                     <div className="flex-1 flex justify-center">
-                        <div className="text-center text-sm">
+                        <div className="text-center text-base">
                             <p className="font-bold underline">Bank Details</p>
                             {companyInfo?.currentBankAccount ? (
                                 <>

@@ -174,6 +174,11 @@ export interface Payment {
     mode: PaymentMode;
     referenceNo?: string;
     notes?: string;
+    // TDS fields
+    tdsApplicable?: boolean;
+    tdsRate?: number;
+    tdsAmount?: number;
+    tdsDate?: string;
 }
 
 export interface TruckHiringNote {
