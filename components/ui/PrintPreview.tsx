@@ -97,7 +97,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({
       const printStyles = `
         @page {
           size: ${orientation === 'landscape' ? 'A4 landscape' : 'A4 portrait'};
-          margin: 0.5in;
+          margin: ${orientation === 'landscape' ? '0.2in' : '0.5in'};
         }
         
         body {
@@ -113,12 +113,48 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({
           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
           max-width: 100%;
           margin: 0 auto;
+          overflow: auto;
+          width: 100%;
         }
         
+        /* For preview display, ensure content fits or scrolls */
         #invoice-pdf {
           width: 420mm !important;
           min-height: 297mm !important;
           max-width: 100% !important;
+          box-sizing: border-box !important;
+          margin: 0 auto;
+        }
+        
+        /* Scale down invoice for preview if container is smaller */
+        @media screen and (max-width: 1600px) {
+          #invoice-pdf {
+            transform: scale(0.8);
+            transform-origin: top left;
+          }
+        }
+        
+        @media screen and (max-width: 1200px) {
+          #invoice-pdf {
+            transform: scale(0.6);
+            transform-origin: top left;
+          }
+        }
+        
+        @media screen and (max-width: 800px) {
+          #invoice-pdf {
+            transform: scale(0.4);
+            transform-origin: top left;
+          }
+        }
+        
+        @media print {
+          #invoice-pdf {
+            width: calc(100% - 0.4in) !important;
+            max-width: 420mm !important;
+            margin: 0 auto !important;
+            transform: none !important;
+          }
         }
         
         /* Hide non-printable elements in preview */
@@ -165,7 +201,11 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({
 
   const handlePrint = async () => {
     try {
-      await printDocument(elementId, { orientation });
+      await printDocument(elementId, { 
+        orientation,
+        margins: 'minimum',
+        scale: 'fit'
+      });
       onPrint();
       onClose();
     } catch (error) {

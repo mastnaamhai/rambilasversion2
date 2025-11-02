@@ -364,7 +364,8 @@ export const printDocument = async (elementId: string, options: PrintOptions = {
       
       @page {
         size: ${options.orientation === 'landscape' ? 'A4 landscape' : 'A4 portrait'};
-        margin: ${options.margins === 'minimum' ? '0.5in' : 
+        margin: ${options.margins === 'minimum' ? 
+                 (options.orientation === 'landscape' ? '0.2in' : '0.5in') : 
                  options.margins === 'custom' && options.customMargins ? 
                  `${options.customMargins.top}in ${options.customMargins.right}in ${options.customMargins.bottom}in ${options.customMargins.left}in` : 
                  '0.75in'};
@@ -395,6 +396,7 @@ export const printDocument = async (elementId: string, options: PrintOptions = {
         width: 420mm !important;
         min-height: 297mm !important;
         max-width: 100% !important;
+        box-sizing: border-box !important;
       }
       
       @media print {
@@ -402,6 +404,12 @@ export const printDocument = async (elementId: string, options: PrintOptions = {
           -webkit-print-color-adjust: exact !important;
           color-adjust: exact !important;
           print-color-adjust: exact !important;
+        }
+        
+        #invoice-pdf {
+          width: calc(100% - 0.4in) !important;
+          max-width: 420mm !important;
+          margin: 0 auto !important;
         }
         
         .no-print {
@@ -528,7 +536,9 @@ const printDocumentMobile = async (elementId: string, options: PrintOptions = {}
       
       @page {
         size: ${options.orientation === 'landscape' ? 'A4 landscape' : 'A4 portrait'};
-        margin: ${options.margins === 'minimum' ? '0.5in' : '0.75in'};
+        margin: ${options.margins === 'minimum' ? 
+                 (options.orientation === 'landscape' ? '0.2in' : '0.5in') : 
+                 '0.75in'};
       }
       
       body {
@@ -546,6 +556,15 @@ const printDocumentMobile = async (elementId: string, options: PrintOptions = {}
         width: 420mm !important;
         min-height: 297mm !important;
         max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      
+      @media print {
+        #invoice-pdf {
+          width: calc(100% - 0.4in) !important;
+          max-width: 420mm !important;
+          margin: 0 auto !important;
+        }
       }
       
       @media print {
