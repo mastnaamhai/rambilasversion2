@@ -391,11 +391,12 @@ export const printDocument = async (elementId: string, options: PrintOptions = {
         scale: none !important;
       }
       
-      /* Fix for invoice landscape width */
+      /* Fix for invoice landscape width - use 100% for full page printing */
       #invoice-pdf {
-        width: 420mm !important;
-        min-height: 297mm !important;
+        width: 100% !important;
+        min-height: auto !important;
         max-width: 100% !important;
+        transform: none !important;
         box-sizing: border-box !important;
       }
       
@@ -407,9 +408,18 @@ export const printDocument = async (elementId: string, options: PrintOptions = {
         }
         
         #invoice-pdf {
-          width: calc(100% - 0.4in) !important;
-          max-width: 420mm !important;
-          margin: 0 auto !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          transform: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        
+        /* Reset all transforms for tables in print */
+        .invoice-table,
+        .charges-table {
+          transform: none !important;
+          width: 100% !important;
         }
         
         .no-print {
@@ -434,12 +444,18 @@ export const printDocument = async (elementId: string, options: PrintOptions = {
           body {
             -webkit-print-color-adjust: exact;
           }
+          #invoice-pdf {
+            transform: none !important;
+          }
         }
         
         @supports (print-color-adjust: exact) {
           /* Modern browsers */
           body {
             print-color-adjust: exact;
+          }
+          #invoice-pdf {
+            transform: none !important;
           }
         }
       }
@@ -553,17 +569,27 @@ const printDocumentMobile = async (elementId: string, options: PrintOptions = {}
       }
       
       #invoice-pdf {
-        width: 420mm !important;
-        min-height: 297mm !important;
+        width: 100% !important;
+        min-height: auto !important;
         max-width: 100% !important;
+        transform: none !important;
         box-sizing: border-box !important;
       }
       
       @media print {
         #invoice-pdf {
-          width: calc(100% - 0.4in) !important;
-          max-width: 420mm !important;
-          margin: 0 auto !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          transform: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        
+        /* Reset all transforms for tables in print */
+        .invoice-table,
+        .charges-table {
+          transform: none !important;
+          width: 100% !important;
         }
       }
       

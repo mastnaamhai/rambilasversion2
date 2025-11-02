@@ -407,10 +407,11 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
             `}</style>
             <div className="w-full">
                 {/* Company Header - Outside boxes */}
-                <div className="mb-6 pb-4">
-                    {/* Logo on Left, Company Name/Details on Right - Center aligned */}
-                    <div className="flex items-start justify-center mb-3">
-                        <div className="flex-shrink-0" style={{ width: '250px', height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '-15px', marginLeft: '100px' }}>
+                <div className="mb-6 pb-4" style={{ position: 'relative' }}>
+                    {/* Company Name/Details Centered in Header */}
+                    <div className="flex items-center justify-center mb-3" style={{ position: 'relative' }}>
+                        {/* Logo - Optional, positioned on left */}
+                        <div className="absolute left-0 flex-shrink-0" style={{ width: '250px', height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <div style={{ transform: 'scale(3.0)', transformOrigin: 'center' }}>
                                 <Logo 
                                     size="xl" 
@@ -420,7 +421,8 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                                 />
                             </div>
                         </div>
-                        <div className="text-center flex-1">
+                        {/* Company Information - Centered in Header */}
+                        <div className="text-center" style={{ width: '100%', margin: '0 auto', marginLeft: '120px' }}>
                             <h1 className="font-bold text-red-600 uppercase leading-tight mb-6" style={{ fontSize: '68px', letterSpacing: '2px', color: '#DC2626', fontWeight: '900', marginBottom: '24px' }}>
                                 {companyInfo?.name || 'ALL INDIA LOGISTICS CHENNAI'}
                             </h1>

@@ -248,6 +248,12 @@ export const LorryReceiptView: React.FC<LorryReceiptViewProps> = ({ lorryReceipt
                             </div>
                         </div>
                         
+                        {/* Invoice No */}
+                        <div className="border border-black p-1 mb-1">
+                            <h3 className="font-bold text-center underline text-xs mb-0.5">INVOICE NO.</h3>
+                            <p className="text-center text-xs">{lorryReceipt.invoiceNo || 'N/A'}</p>
+                        </div>
+                        
                         <div className="grid grid-cols-2 gap-1">
                             {/* From */}
                             <div className="border border-black p-1">

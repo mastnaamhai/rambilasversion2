@@ -220,8 +220,8 @@ export const PrintStyles: React.FC<PrintStylesProps> = ({
         /* Invoice specific styles */
         ${documentType === 'invoice' ? `
           #invoice-pdf {
-            width: ${orientation === 'landscape' ? '420mm' : '100%'} !important;
-            min-height: ${orientation === 'landscape' ? '297mm' : 'auto'} !important;
+            width: 100% !important;
+            min-height: auto !important;
             max-width: 100% !important;
             transform: none !important;
             scale: none !important;
@@ -236,27 +236,35 @@ export const PrintStyles: React.FC<PrintStylesProps> = ({
             margin: 0.2in !important;
           }
           
-          /* Browser-specific invoice width fixes */
+          /* Browser-specific invoice width fixes - use 100% for full page */
           @supports (-webkit-appearance: none) {
             /* WebKit browsers */
             #invoice-pdf {
-              width: 420mm !important;
+              width: 100% !important;
               max-width: 100% !important;
+              transform: none !important;
             }
           }
           
           @supports (print-color-adjust: exact) {
             /* Firefox and modern browsers */
             #invoice-pdf {
-              width: 420mm !important;
+              width: 100% !important;
               max-width: 100% !important;
+              transform: none !important;
             }
           }
           
           .invoice-table {
+            transform: none !important;
             font-size: 11px !important;
             width: 100% !important;
             table-layout: fixed !important;
+          }
+          
+          .charges-table {
+            transform: none !important;
+            width: 100% !important;
           }
           
           .invoice-table th,

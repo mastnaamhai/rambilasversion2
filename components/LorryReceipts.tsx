@@ -139,6 +139,7 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, inv
 
       const matchesSearch = searchTerm === '' ||
         lr.lrNumber.toString().includes(searchTerm) ||
+        (lr.invoiceNo && lr.invoiceNo.toLowerCase().includes(searchLower)) ||
         lr.from.toLowerCase().includes(searchLower) ||
         lr.to.toLowerCase().includes(searchLower) ||
         consignorName.toLowerCase().includes(searchLower) ||
@@ -262,6 +263,7 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, inv
               <tr>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LR No.</th>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice No</th>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Consignor</th>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Consignee</th>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">From / To</th>
@@ -275,6 +277,7 @@ export const LorryReceipts: React.FC<LorryReceiptsProps> = ({ lorryReceipts, inv
                 <tr key={lr._id} onClick={() => setPreviewItem({ type: 'LR', data: lr })} className="hover:bg-slate-50 transition-colors duration-200 cursor-pointer">
                   <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{lr.lrNumber}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{formatDate(lr.date)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{lr.invoiceNo || 'N/A'}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{lr.consignor?.name}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{lr.consignee?.name}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{lr.from} to {lr.to}</td>
