@@ -302,11 +302,12 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     }
                     #invoice-pdf {
                         transform: none !important;
-                        width: calc(100% - 0.4in) !important;
-                        max-width: 420mm !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
                         height: auto !important;
-                        min-height: 100vh !important;
-                        margin: 0 auto !important;
+                        min-height: auto !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
                         box-sizing: border-box !important;
                     }
                     
@@ -324,19 +325,19 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                         display: none !important;
                     }
                     
-                    /* Ensure tables fit properly in landscape with auto-scaling */
+                    /* Ensure tables fit properly in landscape - NO TRANSFORMS in print */
                     .invoice-table {
-                        font-size: ${Math.max(14, 20 * tableScale)}px !important;
+                        transform: none !important;
                         width: 100% !important;
                         table-layout: fixed !important;
                         page-break-inside: avoid !important;
-                        transform-origin: top left !important;
+                        font-size: ${Math.max(12, 20 * tableScale)}px !important;
                     }
                     
                     .invoice-table th,
                     .invoice-table td {
-                        padding: ${Math.max(3, 8 * tableScale)}px ${Math.max(3, 6 * tableScale)}px !important;
-                        font-size: ${Math.max(14, 20 * tableScale)}px !important;
+                        padding: ${Math.max(4, 8 * tableScale)}px ${Math.max(4, 6 * tableScale)}px !important;
+                        font-size: ${Math.max(12, 20 * tableScale)}px !important;
                         line-height: 1.4 !important;
                         word-wrap: break-word !important;
                         overflow-wrap: break-word !important;
@@ -344,8 +345,17 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                         ${hideTableBorders ? 'border: none !important;' : ''}
                     }
                     
+                    /* Reset charges table transforms in print */
+                    .charges-table {
+                        transform: none !important;
+                        width: 100% !important;
+                        font-size: ${Math.max(11, 20 * tableScale)}px !important;
+                    }
+                    
                     .charges-table th,
                     .charges-table td {
+                        padding: ${Math.max(4, 8 * tableScale)}px ${Math.max(4, 6 * tableScale)}px !important;
+                        font-size: ${Math.max(11, 20 * tableScale)}px !important;
                         ${hideTableBorders ? 'border: none !important;' : ''}
                     }
                     
@@ -357,21 +367,6 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                     /* Ensure headers stay with content */
                     .invoice-table thead {
                         display: table-header-group !important;
-                    }
-                    
-                    /* Auto-scale table to fit page based on content */
-                    .invoice-table {
-                        transform: scale(${Math.min(tableScale, 0.9)}) !important;
-                        transform-origin: top left !important;
-                        width: ${100 / Math.min(tableScale, 0.9)}% !important; /* Compensate for scale */
-                    }
-                    
-                    /* Ensure minimum readable scale */
-                    @media print {
-                        .invoice-table {
-                            transform: scale(${Math.max(Math.min(tableScale, 0.9), 0.85)}) !important;
-                            width: ${100 / Math.max(Math.min(tableScale, 0.9), 0.85)}% !important;
-                        }
                     }
                     
                     /* Better spacing for landscape */
@@ -415,8 +410,8 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                 <div className="mb-6 pb-4">
                     {/* Logo on Left, Company Name/Details on Right - Center aligned */}
                     <div className="flex items-start justify-center mb-3">
-                        <div className="flex-shrink-0" style={{ width: '150px', height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '-15px', marginLeft: '50px' }}>
-                            <div style={{ transform: 'scale(2.5)', transformOrigin: 'center' }}>
+                        <div className="flex-shrink-0" style={{ width: '250px', height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '-15px', marginLeft: '100px' }}>
+                            <div style={{ transform: 'scale(3.0)', transformOrigin: 'center' }}>
                                 <Logo 
                                     size="xl" 
                                     showText={false}
@@ -426,7 +421,7 @@ export const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, companyInfo, 
                             </div>
                         </div>
                         <div className="text-center flex-1">
-                            <h1 className="font-bold text-red-600 uppercase leading-tight mb-2" style={{ fontSize: '68px', letterSpacing: '2px', color: '#DC2626', fontWeight: '900' }}>
+                            <h1 className="font-bold text-red-600 uppercase leading-tight mb-6" style={{ fontSize: '68px', letterSpacing: '2px', color: '#DC2626', fontWeight: '900', marginBottom: '24px' }}>
                                 {companyInfo?.name || 'ALL INDIA LOGISTICS CHENNAI'}
                             </h1>
                             
@@ -891,10 +886,18 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, companyInfo, cu
                             }
                             
                             #invoice-pdf {
-                                width: calc(100% - 0.4in) !important;
-                                max-width: 420mm !important;
-                                margin: 0 auto !important;
+                                width: 100% !important;
+                                max-width: 100% !important;
+                                transform: none !important;
+                                margin: 0 !important;
+                                padding: 0 !important;
                                 box-sizing: border-box !important;
+                            }
+                            
+                            .invoice-table,
+                            .charges-table {
+                                transform: none !important;
+                                width: 100% !important;
                             }
                             
                             .no-print {
